@@ -1,0 +1,28 @@
+name: attendance
+
+packages:
+  - packages/**
+  - apps/**
+  - tools/**
+
+command:
+  bootstrap:
+    # We rely on the native Dart pub workspace for resolution, so melos bootstrap
+    # just runs `dart pub get` at the workspace root.
+    runPubGetInParallel: false
+
+scripts:
+  analyze:
+    description: Analyze all packages.
+    exec: dart analyze --fatal-infos
+  format:
+    description: Format all Dart code.
+    exec: dart format .
+  test:
+    description: Run unit tests in packages that have them.
+    exec: flutter test
+    packageFilters:
+      dirExists: test
+  gen-l10n:
+    description: Placeholder for future localization generation.
+    run: echo "no l10n configured"

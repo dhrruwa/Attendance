@@ -1,0 +1,25 @@
+name: teacher
+description: Teacher app — start sessions, advertise the rotating BLE token, watch the live roster, review flagged students.
+publish_to: none
+version: 0.1.0
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared:
+    path: ../../packages/shared
+  flutter_riverpod: ^3.3.2
+  supabase_flutter: ^2.14.2
+  permission_handler: ^12.0.3
+  ble_peripheral: ^2.4.0
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

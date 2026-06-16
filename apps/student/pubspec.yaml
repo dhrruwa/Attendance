@@ -1,0 +1,35 @@
+name: student
+description: Student app — bind device, face capture + on-device match + liveness, scan for the session beacon, capture token + RSSI, submit evidence.
+publish_to: none
+version: 0.1.0
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared:
+    path: ../../packages/shared
+  flutter_riverpod: ^3.3.2
+  supabase_flutter: ^2.14.2
+  flutter_blue_plus: ^2.3.8
+  permission_handler: ^12.0.3
+  camera: ^0.12.0+1
+  google_mlkit_face_detection: ^0.13.2
+  tflite_flutter: ^0.12.1
+  shared_preferences: ^2.3.0
+  image: ^4.3.0
+  crypto: ^3.0.5
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    # Drop the real model binaries here (see README). The app falls back to a
+    # documented stub scorer when these are absent, so it runs out-of-the-box.
+    - assets/models/

@@ -1,0 +1,19 @@
+# Root of the Dart pub workspace (Dart >= 3.6). All member packages set
+# `resolution: workspace` so a single `dart pub get` resolves the whole repo.
+# Melos (7.x) is used for cross-package scripting on top of the pub workspace.
+name: attendance_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - packages/shared
+  - apps/teacher
+  - apps/student
+  - tools/ble_probe
+
+dev_dependencies:
+  melos: ^7.8.2
+  # Resolves `include: package:flutter_lints/...` for the root analysis_options.
+  flutter_lints: ^5.0.0

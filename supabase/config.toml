@@ -1,0 +1,31 @@
+# Minimal Supabase config. Run `supabase init` in this folder if you prefer the
+# CLI to (re)generate the full file; the keys below are the ones that matter for
+# this project. Replace project_id with your linked project ref.
+project_id = "attendance"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[realtime]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+# Email/password sign-in (see README for provisioning users).
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+[functions.validate_attendance]
+# The function authenticates the caller itself via getUser(); the gateway also
+# requires a valid JWT before the function runs.
+verify_jwt = true

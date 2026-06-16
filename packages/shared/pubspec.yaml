@@ -1,0 +1,31 @@
+name: shared
+description: Shared models, Supabase client/repositories, BLE token logic and evidence schema for the attendance system.
+publish_to: none
+version: 0.1.0
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.14.2
+  flutter_riverpod: ^3.3.2
+  meta: ^1.15.0
+  # Production BLE path (token delivered via GATT read — see README BLE findings).
+  # flutter_blue_plus = reliable central (student); ble_peripheral = GATT server +
+  # advertising (teacher). universal_ble is exercised in tools/ble_probe to confirm
+  # whether a single-plugin path can replace this combo on all four OS combos.
+  flutter_blue_plus: ^2.3.8
+  ble_peripheral: ^2.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  assets:
+    - .env.example
