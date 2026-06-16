@@ -80,4 +80,7 @@ class StubSpoofDetector implements SpoofDetector {
 
   @override
   Future<double> score(img.Image faceCrop) async => 0.9;
+
+  @override
+  void dispose() {}
 }

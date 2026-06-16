@@ -5,7 +5,6 @@ import 'package:shared/shared.dart';
 import 'face/face_enrollment.dart';
 import 'face/face_matcher.dart';
 import 'face/liveness_capture.dart';
-import 'face/spoof_detector.dart';
 import 'student_providers.dart';
 
 /// Steps surfaced to the UI as the flow runs.

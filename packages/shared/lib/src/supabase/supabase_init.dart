@@ -8,12 +8,12 @@ class SupabaseInit {
     if (!config.isValid) {
       throw StateError(
         'Supabase config missing. Pass --dart-define=SUPABASE_URL=... and '
-        '--dart-define=SUPABASE_ANON_KEY=... (see README).',
+        '--dart-define=SUPABASE_PUBLISHABLE_KEY=... (see README).',
       );
     }
     await Supabase.initialize(
       url: config.supabaseUrl,
-      anonKey: config.supabaseAnonKey,
+      publishableKey: config.supabasePublishableKey,
       authOptions: const FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
       ),

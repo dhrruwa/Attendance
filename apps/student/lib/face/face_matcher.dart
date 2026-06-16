@@ -93,6 +93,9 @@ class StubFaceMatcher implements FaceMatcher {
     }
     return _l2normalize(vec);
   }
+
+  @override
+  void dispose() {}
 }
 
 List<double> _l2normalize(List<double> v) {

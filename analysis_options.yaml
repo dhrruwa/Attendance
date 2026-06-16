@@ -15,4 +15,5 @@ linter:
     prefer_single_quotes: true
     always_declare_return_types: true
     avoid_print: false # CLI/probe harness uses print intentionally
-    require_trailing_commas: true
+    # require_trailing_commas intentionally omitted: the Dart 3.12 formatter
+    # manages commas itself and the lint conflicts with it.

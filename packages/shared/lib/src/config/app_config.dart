@@ -6,23 +6,33 @@
 class AppConfig {
   const AppConfig({
     required this.supabaseUrl,
-    required this.supabaseAnonKey,
+    required this.supabasePublishableKey,
   });
 
   final String supabaseUrl;
-  final String supabaseAnonKey;
+
+  /// The publishable (`sb_publishable_...`) key — safe on the client, gated by
+  /// RLS. Legacy `anon` JWTs also work here.
+  final String supabasePublishableKey;
 
   /// Reads configuration from compile-time environment.
   ///
   /// Run with:
-  ///   flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
+  ///   flutter run --dart-define=SUPABASE_URL=... \
+  ///               --dart-define=SUPABASE_PUBLISHABLE_KEY=...
+  /// (SUPABASE_ANON_KEY is accepted as a fallback name for older setups.)
   factory AppConfig.fromEnvironment() {
     const url = String.fromEnvironment('SUPABASE_URL');
-    const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-    return const AppConfig(supabaseUrl: url, supabaseAnonKey: anonKey);
+    const publishable = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+    const anon = String.fromEnvironment('SUPABASE_ANON_KEY');
+    return AppConfig(
+      supabaseUrl: url,
+      supabasePublishableKey: publishable.isNotEmpty ? publishable : anon,
+    );
   }
 
-  bool get isValid => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+  bool get isValid =>
+      supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
 }
 
 /// The single BLE service UUID family used for session discovery.
