@@ -97,9 +97,16 @@ class BleAdvertiser {
     _advertising = false;
   }
 
-  /// Whether the BLE adapter is powered on / advertising is supported.
+  /// Whether this device can act as a BLE peripheral (advertise).
+  ///
+  /// NOTE: ble_peripheral's isSupported() reads `bluetoothManager.adapter`,
+  /// which is only wired up inside initialize(). Calling it cold returns false
+  /// on every device. So we initialize first, then query. The plugin THROWS
+  /// (rather than returning false) when multi-advertisement is unsupported, so
+  /// we treat a throw as "not supported".
   Future<bool> isSupported() async {
     try {
+      await initialize();
       return await BlePeripheral.isSupported();
     } catch (_) {
       return false;
