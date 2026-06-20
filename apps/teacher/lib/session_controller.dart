@@ -56,6 +56,33 @@ class TeacherSessionController extends Notifier<TeacherSessionState> {
     required String courseId,
     required String teacherId,
     Duration duration = const Duration(minutes: 15),
+  }) =>
+      _begin(
+        duration: duration,
+        open: (repo) => repo.startSession(
+            courseId: courseId, teacherId: teacherId, duration: duration),
+      );
+
+  /// Start a session for an OFFERING (subject × section), tagging the room.
+  Future<void> startForOffering({
+    required String offeringId,
+    required String teacherId,
+    String? room,
+    Duration duration = const Duration(minutes: 15),
+  }) =>
+      _begin(
+        duration: duration,
+        open: (repo) => repo.startSessionForOffering(
+          offeringId: offeringId,
+          teacherId: teacherId,
+          room: room,
+          duration: duration,
+        ),
+      );
+
+  Future<void> _begin({
+    required Duration duration,
+    required Future<Session> Function(SessionRepository repo) open,
   }) async {
     state = state.copyWith(starting: true, clearError: true);
     try {
@@ -68,11 +95,7 @@ class TeacherSessionController extends Notifier<TeacherSessionState> {
         );
       }
 
-      final session = await repo.startSession(
-        courseId: courseId,
-        teacherId: teacherId,
-        duration: duration,
-      );
+      final session = await open(repo);
       _tokenSource = await repo.tokenSource(session.id);
 
       final initial = _tokenSource!.currentToken(DateTime.now().toUtc());
@@ -126,8 +149,8 @@ final teacherSessionControllerProvider =
   TeacherSessionController.new,
 );
 
-/// Realtime roster for the active session.
+/// Realtime, student-based roster for the active session (no device identifiers).
 final rosterProvider =
-    StreamProvider.family<List<Attendance>, String>((ref, sessionId) {
+    StreamProvider.family<List<RosterEntry>, String>((ref, sessionId) {
   return ref.watch(sessionRepositoryProvider).watchRoster(sessionId);
 });

@@ -6,6 +6,8 @@ import '../supabase/attendance_repository.dart';
 import '../supabase/auth_repository.dart';
 import '../supabase/course_repository.dart';
 import '../supabase/device_repository.dart';
+import '../supabase/offering_repository.dart';
+import '../supabase/profile_repository.dart';
 import '../supabase/session_repository.dart';
 import '../supabase/supabase_init.dart';
 
@@ -32,6 +34,14 @@ final sessionRepositoryProvider = Provider<SessionRepository>(
 
 final attendanceRepositoryProvider = Provider<AttendanceRepository>(
   (ref) => AttendanceRepository(ref.watch(supabaseClientProvider)),
+);
+
+final profileRepositoryProvider = Provider<ProfileRepository>(
+  (ref) => ProfileRepository(ref.watch(supabaseClientProvider)),
+);
+
+final offeringRepositoryProvider = Provider<OfferingRepository>(
+  (ref) => OfferingRepository(ref.watch(supabaseClientProvider)),
 );
 
 /// Emits Supabase auth state changes (sign-in / sign-out / token refresh).

@@ -74,16 +74,20 @@ class Evidence {
         'captured_at': (capturedAt)?.toIso8601String(),
       };
 
+  // Tolerant of partial evidence: RFID/manual rows store only {source, srn,
+  // room}, so face/liveness/ble fields may be absent. Default rather than throw
+  // (the teacher roster parses every attendance row, including RFID ones).
   factory Evidence.fromJson(Map<String, dynamic> json) => Evidence(
-        faceMatchScore: (json['face_match_score'] as num).toDouble(),
-        livenessPassed: json['liveness_passed'] as bool,
-        challengeType:
-            ChallengeType.fromString(json['challenge_type'] as String),
+        faceMatchScore: (json['face_match_score'] as num?)?.toDouble() ?? 0,
+        livenessPassed: (json['liveness_passed'] as bool?) ?? false,
+        challengeType: json['challenge_type'] != null
+            ? ChallengeType.fromString(json['challenge_type'] as String)
+            : ChallengeType.blink,
         challengePassed: (json['challenge_passed'] as bool?) ?? true,
         passiveSpoofScore: (json['passive_spoof_score'] as num?)?.toDouble(),
-        bleToken: json['ble_token'] as String,
-        rssi: (json['rssi'] as num).toInt(),
-        deviceId: json['device_id'] as String,
+        bleToken: (json['ble_token'] as String?) ?? '',
+        rssi: (json['rssi'] as num?)?.toInt() ?? 0,
+        deviceId: (json['device_id'] as String?) ?? '',
         faceModelVersion: json['face_model_version'] as String?,
         wifiBssid: json['wifi_bssid'] as String?,
         geo: json['geo'] == null

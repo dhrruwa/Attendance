@@ -5,6 +5,7 @@ class Course {
     required this.teacherId,
     required this.name,
     this.code,
+    this.teacherName,
     this.createdAt,
   });
 
@@ -13,6 +14,10 @@ class Course {
   final String teacherId;
   final String name;
   final String? code;
+
+  /// Faculty display name, populated when the query embeds `teacher(full_name)`.
+  /// Not a persisted column.
+  final String? teacherName;
   final DateTime? createdAt;
 
   factory Course.fromJson(Map<String, dynamic> json) => Course(
@@ -21,6 +26,9 @@ class Course {
         teacherId: json['teacher_id'] as String,
         name: json['name'] as String,
         code: json['code'] as String?,
+        teacherName: json['teacher'] == null
+            ? null
+            : (json['teacher'] as Map)['full_name'] as String?,
         createdAt: json['created_at'] == null
             ? null
             : DateTime.parse(json['created_at'] as String),

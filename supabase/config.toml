@@ -29,3 +29,8 @@ enable_confirmations = false
 # The function authenticates the caller itself via getUser(); the gateway also
 # requires a valid JWT before the function runs.
 verify_jwt = true
+
+[functions.rfid_attendance]
+# Authenticated by a shared device secret (RFID_DEVICE_SECRET), not a user JWT,
+# since an ESP8266 reader cannot hold a Supabase session.
+verify_jwt = false

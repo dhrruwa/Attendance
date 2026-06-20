@@ -7,9 +7,10 @@ import '../session_controller.dart';
 import 'flag_review_screen.dart';
 
 class SessionScreen extends ConsumerStatefulWidget {
-  const SessionScreen({super.key, required this.teacher, required this.course});
+  const SessionScreen(
+      {super.key, required this.teacher, required this.offering});
   final AppUser teacher;
-  final Course course;
+  final Offering offering;
 
   @override
   ConsumerState<SessionScreen> createState() => _SessionScreenState();
@@ -32,7 +33,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.course.name),
+        title: Text('${widget.offering.subjectName} · ${widget.offering.sectionLabel}'),
         actions: [
           if (state.isActive)
             TextButton.icon(
@@ -63,9 +64,11 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           const Icon(Icons.wifi_tethering, size: 64),
           const SizedBox(height: 16),
           Text(
-            'Start an attendance session for ${widget.course.name}. '
-            'Your phone will advertise a rotating token over BLE for students '
-            'in the room to capture. Keep this screen in the foreground.',
+            'Start attendance for ${widget.offering.subjectName} — '
+            '${widget.offering.sectionLabel}'
+            '${widget.offering.room != null ? ' (Room ${widget.offering.room})' : ''}. '
+            'Your phone will broadcast a secure signal for students in the room. '
+            'Keep this screen in the foreground.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -80,9 +83,10 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
                 ? null
                 : () async {
                     await _ensurePermissions();
-                    await controller.start(
-                      courseId: widget.course.id,
+                    await controller.startForOffering(
+                      offeringId: widget.offering.id,
                       teacherId: widget.teacher.id,
+                      room: widget.offering.room,
                     );
                   },
             icon: state.starting
@@ -109,10 +113,10 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           color: Colors.teal.shade50,
           child: ListTile(
             leading: const Icon(Icons.podcasts, color: Colors.teal),
-            title: const Text('Advertising token (rotates ~5s)'),
+            title: const Text('Session active'),
             subtitle: Text(
-              state.currentToken ?? '—',
-              style: const TextStyle(fontSize: 24, letterSpacing: 2),
+              'Students in the room can mark attendance for '
+              '${widget.offering.subjectName} · ${widget.offering.sectionLabel}.',
             ),
             trailing: IconButton(
               tooltip: 'Review flagged',
@@ -129,7 +133,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text('Live roster',
+            child: Text('Present students',
                 style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ),
@@ -139,12 +143,13 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
             error: (e, _) => Center(child: Text('Error: $e')),
             data: (rows) {
               if (rows.isEmpty) {
-                return const Center(child: Text('No submissions yet.'));
+                return const Center(
+                    child: Text('No students have marked yet.'));
               }
               return ListView.separated(
                 itemCount: rows.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, i) => _RosterTile(att: rows[i]),
+                itemBuilder: (_, i) => _RosterTile(entry: rows[i]),
               );
             },
           ),
@@ -154,22 +159,36 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
   }
 }
 
+/// Formats a UTC timestamp as a local 12-hour time, e.g. "3:40 PM".
+String formatMarkedTime(DateTime? dt) {
+  if (dt == null) return '—';
+  final l = dt.toLocal();
+  final h = l.hour % 12 == 0 ? 12 : l.hour % 12;
+  final m = l.minute.toString().padLeft(2, '0');
+  return '$h:$m ${l.hour < 12 ? 'AM' : 'PM'}';
+}
+
 class _RosterTile extends StatelessWidget {
-  const _RosterTile({required this.att});
-  final Attendance att;
+  const _RosterTile({required this.entry});
+  final RosterEntry entry;
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color, label) = switch (att.status) {
+    final (icon, color, label) = switch (entry.status) {
       AttendanceStatus.present => (Icons.check_circle, Colors.green, 'Present'),
       AttendanceStatus.flagged => (Icons.flag, Colors.orange, 'Flagged'),
       AttendanceStatus.absent => (Icons.cancel, Colors.red, 'Absent'),
     };
+    final srn = entry.studentCode != null ? 'SRN: ${entry.studentCode}' : null;
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text(att.studentId),
-      subtitle: Text(att.reason ?? label),
-      trailing: Text('RSSI ${att.rssi ?? '—'}'),
+      title: Text(entry.studentName,
+          style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text([
+        if (srn != null) srn,
+        'Marked: ${formatMarkedTime(entry.markedAt)}',
+      ].join('  ·  ')),
+      trailing: Text(label, style: TextStyle(color: color)),
     );
   }
 }

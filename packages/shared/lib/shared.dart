@@ -15,6 +15,9 @@ export 'src/models/device.dart';
 export 'src/models/session.dart';
 export 'src/models/session_token.dart';
 export 'src/models/attendance.dart';
+export 'src/models/roster_entry.dart';
+export 'src/models/profile_change_request.dart';
+export 'src/models/offering.dart';
 
 // Evidence
 export 'src/evidence/evidence.dart';
@@ -31,6 +34,8 @@ export 'src/supabase/device_repository.dart';
 export 'src/supabase/course_repository.dart';
 export 'src/supabase/session_repository.dart';
 export 'src/supabase/attendance_repository.dart';
+export 'src/supabase/profile_repository.dart';
+export 'src/supabase/offering_repository.dart';
 
 // Providers
 export 'src/providers/providers.dart';

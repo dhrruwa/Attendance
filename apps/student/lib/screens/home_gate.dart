@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared/shared.dart';
 
-import '../face/face_enrollment.dart';
 import '../student_providers.dart';
 import 'device_bind_screen.dart';
-import 'enroll_screen.dart';
-import 'home_screen.dart';
+import 'main_shell.dart';
 
-enum GateState { needsBind, needsEnroll, ready }
+enum GateState { needsBind, ready }
 
 final gateStateProvider =
     FutureProvider.family<GateState, String>((ref, studentId) async {
@@ -17,12 +15,13 @@ final gateStateProvider =
       .watch(deviceRepositoryProvider)
       .isBoundDevice(userId: studentId, deviceId: deviceId);
   if (!bound) return GateState.needsBind;
-  if (!await FaceEnrollment.isEnrolled(studentId)) return GateState.needsEnroll;
   return GateState.ready;
 });
 
-/// Routes a signed-in student through first-run device binding and face
-/// enrollment before reaching the home screen.
+/// Routes a signed-in student through first-run device binding, then into the
+/// tabbed app. Face enrollment is no longer a gate step — it lives in the
+/// Profile tab (the student adds a photo there), and the Mark tab nudges them
+/// to Profile if they haven't yet.
 class HomeGate extends ConsumerWidget {
   const HomeGate({super.key, required this.student});
   final AppUser student;
@@ -39,11 +38,7 @@ class HomeGate extends ConsumerWidget {
             student: student,
             onBound: () => ref.invalidate(gateStateProvider(student.id)),
           ),
-        GateState.needsEnroll => EnrollScreen(
-            student: student,
-            onEnrolled: () => ref.invalidate(gateStateProvider(student.id)),
-          ),
-        GateState.ready => HomeScreen(student: student),
+        GateState.ready => MainShell(student: student),
       },
     );
   }

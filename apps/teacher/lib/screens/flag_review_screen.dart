@@ -26,36 +26,41 @@ class FlagReviewScreen extends ConsumerWidget {
             itemCount: flagged.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (_, i) {
-              final a = flagged[i];
-              final ev = a.evidence;
+              final e = flagged[i];
+              final srn =
+                  e.studentCode != null ? 'SRN: ${e.studentCode}' : null;
               return ExpansionTile(
                 leading: const Icon(Icons.flag, color: Colors.orange),
-                title: Text(a.studentId),
-                subtitle: Text(a.reason ?? 'flagged'),
+                title: Text(e.studentName,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text([
+                  if (srn != null) srn,
+                  e.reason ?? 'flagged',
+                ].join('  ·  ')),
                 childrenPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 children: [
+                  // Human-meaningful verification signals only — no BLE token,
+                  // device id, MAC, UUID or RSSI is ever shown to faculty.
                   _evidenceRow(
-                      'Face match', ev?.faceMatchScore.toStringAsFixed(2)),
-                  _evidenceRow('Liveness', '${ev?.livenessPassed}'),
-                  _evidenceRow('Challenge', ev?.challengeType.name),
-                  _evidenceRow('Passive spoof',
-                      ev?.passiveSpoofScore?.toStringAsFixed(2)),
-                  _evidenceRow('RSSI', '${a.rssi ?? ev?.rssi}'),
-                  _evidenceRow('Device', a.deviceId ?? ev?.deviceId),
-                  _evidenceRow('Token', a.submittedToken ?? ev?.bleToken),
+                      'Face match', e.faceMatchScore?.toStringAsFixed(2)),
+                  _evidenceRow('Liveness',
+                      e.livenessPassed == null ? null : '${e.livenessPassed}'),
+                  _evidenceRow('Challenge', e.challengeType?.name),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton.icon(
-                        onPressed: () => _review(context, ref, a.id, false),
+                        onPressed: () =>
+                            _review(context, ref, e.attendanceId, false),
                         icon: const Icon(Icons.close, color: Colors.red),
                         label: const Text('Reject'),
                       ),
                       const SizedBox(width: 8),
                       FilledButton.icon(
-                        onPressed: () => _review(context, ref, a.id, true),
+                        onPressed: () =>
+                            _review(context, ref, e.attendanceId, true),
                         icon: const Icon(Icons.check),
                         label: const Text('Approve'),
                       ),

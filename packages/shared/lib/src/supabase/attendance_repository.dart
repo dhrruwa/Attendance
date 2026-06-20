@@ -23,6 +23,41 @@ class SubmitResult {
       );
 }
 
+/// One row in the student's own attendance history (joined with the session's
+/// course for display in the Attendance Tracker).
+class AttendanceHistoryEntry {
+  const AttendanceHistoryEntry({
+    required this.status,
+    required this.reason,
+    required this.markedAt,
+    required this.courseName,
+    this.courseCode,
+    this.sessionStartedAt,
+  });
+
+  final AttendanceStatus status;
+  final String reason;
+  final DateTime markedAt;
+  final String courseName;
+  final String? courseCode;
+  final DateTime? sessionStartedAt;
+
+  factory AttendanceHistoryEntry.fromJson(Map<String, dynamic> json) {
+    final session = (json['session'] as Map?)?.cast<String, dynamic>();
+    final course = (session?['course'] as Map?)?.cast<String, dynamic>();
+    return AttendanceHistoryEntry(
+      status: AttendanceStatus.fromString(json['status'] as String),
+      reason: (json['reason'] as String?) ?? '',
+      markedAt: DateTime.parse(json['created_at'] as String),
+      courseName: (course?['name'] as String?) ?? 'Unknown course',
+      courseCode: course?['code'] as String?,
+      sessionStartedAt: session?['started_at'] == null
+          ? null
+          : DateTime.parse(session!['started_at'] as String),
+    );
+  }
+}
+
 class AttendanceRepository {
   AttendanceRepository(this._client);
   final SupabaseClient _client;
@@ -65,6 +100,21 @@ class AttendanceRepository {
         .limit(1);
     if (rows.isEmpty) return null;
     return Attendance.fromJson(rows.first);
+  }
+
+  /// The student's full attendance history, newest first, with the course of
+  /// each session joined in for display. RLS limits rows to the caller's own.
+  Future<List<AttendanceHistoryEntry>> myHistory(String studentId) async {
+    final rows = await _client
+        .from('attendance')
+        .select('status, reason, created_at, '
+            'session:sessions(started_at, course:courses(name, code))')
+        .eq('student_id', studentId)
+        .order('created_at', ascending: false);
+    return rows
+        .map((r) =>
+            AttendanceHistoryEntry.fromJson((r as Map).cast<String, dynamic>()))
+        .toList();
   }
 
   /// Teacher action: confirm or reject a flagged student after review.

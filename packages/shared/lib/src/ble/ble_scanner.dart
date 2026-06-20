@@ -79,15 +79,53 @@ class BleScanner {
     return _connectAndRead(target);
   }
 
+  /// Connects and reads, retrying the WHOLE sequence on transient BLE failures
+  /// (`readCharacteristic() returned false`, timeouts, GATT 133) — budget
+  /// Android centrals routinely fail the first attempt and succeed on a fresh
+  /// connection.
   Future<BeaconReading?> _connectAndRead(ScanResult result) async {
+    Object? lastError;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await _attemptConnectAndRead(result);
+      } catch (e) {
+        lastError = e;
+        try {
+          await result.device.disconnect();
+        } catch (_) {/* ignore */}
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+      }
+    }
+    if (lastError != null) throw lastError;
+    return null;
+  }
+
+  Future<BeaconReading?> _attemptConnectAndRead(ScanResult result) async {
     final device = result.device;
     try {
+      // A leftover connection from a previous attempt (or a killed app) wedges
+      // the Android GATT stack and makes subsequent reads fail. Clear it.
+      if (device.isConnected) {
+        await device.disconnect();
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+
       // License.nonprofit per the FlutterBluePlus license (educational/nonprofit
       // use). Switch to License.commercial if this is deployed for-profit.
       await device.connect(
         license: License.nonprofit,
-        timeout: const Duration(seconds: 8),
+        timeout: const Duration(seconds: 10),
       );
+      // High priority + a settle delay before discovery/reads. Reading too early
+      // is the most common cause of `readCharacteristic returned false` and
+      // intermittent read timeouts on Android.
+      try {
+        await device.requestConnectionPriority(
+          connectionPriorityRequest: ConnectionPriority.high,
+        );
+      } catch (_) {/* android-only / best-effort */}
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+
       final services = await device.discoverServices();
       final svc = services.firstWhere(
         (s) => s.uuid == Guid(BleContract.beaconServiceUuid),
@@ -98,9 +136,9 @@ class BleScanner {
       String? sessionId;
       for (final c in svc.characteristics) {
         if (c.uuid == Guid(BleContract.tokenCharacteristicUuid)) {
-          token = utf8.decode(await c.read());
+          token = utf8.decode(await _readWithRetry(c));
         } else if (c.uuid == Guid(BleContract.sessionIdCharacteristicUuid)) {
-          sessionId = utf8.decode(await c.read());
+          sessionId = utf8.decode(await _readWithRetry(c));
         }
       }
 
@@ -116,6 +154,19 @@ class BleScanner {
         await device.disconnect();
       } catch (_) {
         /* ignore disconnect errors */
+      }
+    }
+  }
+
+  /// Reads a characteristic, retrying once on a transient timeout — Android's
+  /// GATT stack occasionally drops the first read of a freshly-made connection.
+  Future<List<int>> _readWithRetry(BluetoothCharacteristic c) async {
+    for (var attempt = 0; ; attempt++) {
+      try {
+        return await c.read(timeout: 12);
+      } catch (e) {
+        if (attempt >= 1) rethrow;
+        await Future<void>.delayed(const Duration(milliseconds: 400));
       }
     }
   }

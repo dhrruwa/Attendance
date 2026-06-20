@@ -18,7 +18,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 // ---- Tunable server-side policy thresholds --------------------------
 const FACE_MATCH_MIN = 0.75; // cosine similarity to enrolled embedding
 const PASSIVE_SPOOF_MIN = 0.70; // passive anti-spoof model score
-const RSSI_MIN = -85; // dBm; weaker => too far from teacher => flag
+const RSSI_MIN = -98; // dBm; tuned for ~10 m classroom range (was -85 ≈ a few m).
+// At -98 a ~10 m student passes, but so could someone just outside the room —
+// RSSI can't cleanly separate them; teacher flag-review is the backstop.
 const TOKEN_SKEW_MS = 3000; // tolerance on token validity window
 
 const corsHeaders = {
@@ -90,21 +92,41 @@ Deno.serve(async (req: Request) => {
   // 2. Session must exist, be open, and within its window.
   const { data: session, error: sErr } = await admin
     .from('sessions')
-    .select('id, course_id, status, started_at, ends_at')
+    .select('id, course_id, offering_id, status, started_at, ends_at')
     .eq('id', sessionId)
     .maybeSingle();
   if (sErr) return json({ error: 'session lookup failed' }, 500);
   if (!session) return json({ error: 'session not found' }, 404);
 
-  // Enrollment check — the student must belong to the session's course.
-  const { data: enrollment } = await admin
-    .from('enrollments')
-    .select('id')
-    .eq('course_id', session.course_id)
-    .eq('student_id', studentId)
-    .maybeSingle();
-  if (!enrollment) {
-    return json({ error: 'not enrolled in this course' }, 403);
+  // Enrollment check — offering sessions: student must be in the offering's
+  // section. Legacy course sessions: student must be enrolled in the course.
+  let enrolled = false;
+  if (session.offering_id) {
+    const { data: off } = await admin
+      .from('offerings')
+      .select('section_id')
+      .eq('id', session.offering_id)
+      .maybeSingle();
+    if (off) {
+      const { data: m } = await admin
+        .from('section_students')
+        .select('student_id')
+        .eq('section_id', off.section_id)
+        .eq('student_id', studentId)
+        .maybeSingle();
+      enrolled = !!m;
+    }
+  } else if (session.course_id) {
+    const { data: e } = await admin
+      .from('enrollments')
+      .select('id')
+      .eq('course_id', session.course_id)
+      .eq('student_id', studentId)
+      .maybeSingle();
+    enrolled = !!e;
+  }
+  if (!enrolled) {
+    return json({ error: 'not enrolled in this class' }, 403);
   }
 
   const sessionOpen =

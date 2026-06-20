@@ -22,7 +22,9 @@ class CourseRepository {
   Future<List<Course>> coursesForStudent(String studentId) async {
     final rows = await _client
         .from('enrollments')
-        .select('course:courses(*)')
+        // Embed the faculty name via the courses.teacher_id -> users FK so the
+        // student dashboard can show who teaches the subject.
+        .select('course:courses(*, teacher:users!teacher_id(full_name))')
         .eq('student_id', studentId);
     return rows
         .map((r) =>

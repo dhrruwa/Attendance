@@ -62,5 +62,26 @@ class AuthRepository {
     return loadProfile(uid);
   }
 
+  /// Updates the signed-in user's own editable profile fields. RLS
+  /// (users_update_self) restricts this to the caller's own row. Returns the
+  /// refreshed profile.
+  Future<AppUser> updateProfile({
+    required String uid,
+    String? fullName,
+    String? phone,
+    String? collegeId,
+  }) async {
+    final patch = <String, dynamic>{
+      if (fullName != null) 'full_name': fullName,
+      if (phone != null) 'phone': phone,
+      if (collegeId != null) 'college_id': collegeId,
+      // Saving (re)locks the profile. The DB trigger consumes any open edit
+      // window; further edits need a teacher-approved request.
+      'profile_locked': true,
+    };
+    await _client.from('users').update(patch).eq('id', uid);
+    return loadProfile(uid);
+  }
+
   Future<void> signOut() => _client.auth.signOut();
 }
